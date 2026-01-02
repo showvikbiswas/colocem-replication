@@ -1,1 +1,7 @@
-data/atlas_allexp.csv
+data/*
+artista_non_receptor_gene_exp
+artista_non_receptor_gene_list
+artista_receptor_gene_exp
+artista_receptor_gene_list
+per_gene_results
+results
