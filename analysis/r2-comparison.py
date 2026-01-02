@@ -5,20 +5,20 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import sys
 
-for folder in tqdm(os.listdir("results/xgb")):
-    if folder != '10DPI_1':
+for folder in tqdm(os.listdir("../../results/xgb")):
+    if folder != '10DPI_1': # use 10DPI_1 as example
         continue
     print(folder)
-    if not os.path.exists(f"per_gene_results/{folder}"):
+    if not os.path.exists(f"../../per_gene_results/{folder}"):
         print("per_gene_results/" + folder + " does not exist")
         continue
-    for filename in tqdm(os.listdir("results/xgb/" + folder)):
+    for filename in tqdm(os.listdir("../../results/xgb/" + folder)):
         ncem_r2 = []
         xgb_r2 = []
         if filename == 'Unknown.csv':
             continue
-        xgb_df = pd.read_csv(f"results/xgb/{folder}/{filename}")
-        ncem_df = pd.read_csv(f"per_gene_results/{folder}/{filename}")
+        xgb_df = pd.read_csv(f"../../results/xgb/{folder}/{filename}")
+        ncem_df = pd.read_csv(f"../../per_gene_results/{folder}/{filename}")
         # from ncem_df, remove [ and ] from first column
         ncem_df.iloc[:, 0] = ncem_df.iloc[:, 0].str.replace("[", "")
         ncem_df.iloc[:, 0] = ncem_df.iloc[:, 0].str.replace("]", "")
@@ -63,6 +63,6 @@ for folder in tqdm(os.listdir("results/xgb")):
         # increase y ticks size
         plt.yticks(fontsize=20)
         plt.tight_layout()
-        os.makedirs(f"comp/cumulative_log_pdf/{folder}/", exist_ok=True)
-        plt.savefig(f"comp/cumulative_log_pdf/{folder}/" + filename.split(".")[0] + ".png")
+        os.makedirs(f"../../comp/cumulative_log_pdf/{folder}/", exist_ok=True)
+        plt.savefig(f"../../comp/cumulative_log_pdf/{folder}/" + filename.split(".")[0] + ".png")
         plt.clf()
