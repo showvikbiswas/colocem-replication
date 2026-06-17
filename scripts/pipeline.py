@@ -1489,7 +1489,7 @@ def run_pipeline(config: PipelineConfig) -> None:
 
 
 def default_lr_pairs_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "data" / "atlas_allexp.csv"
+    return Path(__file__).resolve().parents[1] / "data" / "mouse_850_lr_pairs_cpdb_interactions.csv"
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -52,6 +52,7 @@ The main workflow is:
 │   ├── colocalization_breakdown.ipynb
 │   └── r2-comparison.py
 ├── data/
+│   ├── atlas_allexp.csv
 │   ├── mouse_850_lr_pairs_cpdb_interactions.csv
 │   └── r2_summary.csv
 ├── pipeline-notebooks/
@@ -81,6 +82,10 @@ The main dependencies are:
 - `joblib` for model bundle export,
 - `tqdm` for progress bars.
 
+### For MacOS Users 
+
+- XGBoost requires the OpenMP runtime to be separately installed using `brew install libomp`.
+
 ## Input Data Format
 
 The main pipeline expects a cell-by-gene CSV file. By default, the file should contain:
@@ -104,7 +109,7 @@ If your metadata column names differ, pass them through command-line options suc
 The default ligand-receptor file is:
 
 ```text
-data/atlas_allexp.csv
+data/mouse_850_lr_pairs_cpdb_interactions.csv
 ```
 
 It is expected to contain ligand and receptor gene-symbol columns. By default, these are:
@@ -114,12 +119,18 @@ It is expected to contain ligand and receptor gene-symbol columns. By default, t
 
 Use `--ligand-col` and `--receptor-col` if your ligand-receptor table uses different names.
 
-## Quick Start: Running the Pipeline
+## Quick Start
+
+### Downloading the Dataset
+
+Download the Mouse Brain Atlas dataset file `atlas_allexp.csv` from [here](https://zenodo.org/records/18134067). The file has been preprocessed according to the script's requirements. Place the file at `data/atlas_allexp.csv`.
+
+### Running the Pipeline
 
 Run the full ColocEM implementation with:
 
 ```bash
-python scripts/pipeline.py path/to/expression.csv
+python scripts/pipeline.py data/atlas_allexp.csv
 ```
 
 By default, results are written to:
@@ -131,13 +142,13 @@ results/
 You can choose a different output directory:
 
 ```bash
-python scripts/pipeline.py path/to/expression.csv --results-dir results/atlas_run
+python scripts/pipeline.py data/atlas_allexp.csv --results-dir results/atlas_run
 ```
 
 Useful options include:
 
 ```bash
-python scripts/pipeline.py path/to/expression.csv \
+python scripts/pipeline.py data/atlas_allexp.csv \
   --lr-pairs data/mouse_850_lr_pairs_cpdb_interactions.csv \
   --win-size 2.0 \
   --grid-n 25 \
@@ -153,7 +164,7 @@ python scripts/pipeline.py path/to/expression.csv \
 For a faster exploratory run, reduce the number of target genes, permutations, or XGBoost search settings:
 
 ```bash
-python scripts/pipeline.py path/to/expression.csv \
+python scripts/pipeline.py data/atlas_allexp.csv \
   --target-limit 50 \
   --n-permutations 0 \
   --max-depths 4 \
@@ -167,28 +178,28 @@ python scripts/pipeline.py path/to/expression.csv \
 
 ## Pipeline Outputs
 
-The script writes intermediate and downstream outputs under the selected results directory.
+The script writes intermediate and downstream outputs under the selected results directory. The paths below assume the default `results/` directory; if you pass `--results-dir`, replace `results/` with your chosen output directory.
 
 Important files include:
 
-- `pairwise_weighted_pcc_map.csv`: weighted PCC values for cell-type pairs across sliding windows.
-- `island_index.csv`: detected colocalized islands and summary statistics.
-- `binary_colocalization.csv`: per-cell binary colocalization encoding.
-- `cell_coverage.csv`: per-cell island coverage features.
-- `lr_pairs_kept.csv`: ligand-receptor pairs retained after matching genes to the expression table.
-- `lr_feature_report.json`: ligand-receptor matching summary.
-- `features/x_receptors.csv`: receiver receptor expression matrix.
-- `features/x_ligand_exposure.csv`: ligand exposure matrix.
-- `features/x_coverage.csv`: island coverage feature matrix.
-- `features/target_genes.csv`: target genes modeled by XGBoost.
-- `r2_summary.csv`: per-receiver, per-gene XGBoost performance.
-- `split_info.json`: spatial split and feature metadata.
-- `downstream/r2_ecdf.png`: ECDF plot of per-gene `R2` values.
-- `downstream/p_values.csv`: permutation-based p-values, when enabled.
-- `downstream/responsive_genes/`: per-receiver responsive-gene tables.
-- `downstream/shap/`: SHAP feature rankings, when enabled.
-- `downstream/perturbations/`: ligand blockade and receptor knockout signatures.
-- `models/`: trained XGBoost model files, when model saving is enabled.
+- `results/pairwise_weighted_pcc_map.csv`: weighted PCC values for cell-type pairs across sliding windows.
+- `results/island_index.csv`: detected colocalized islands and summary statistics.
+- `results/binary_colocalization.csv`: per-cell binary colocalization encoding.
+- `results/cell_coverage.csv`: per-cell island coverage features.
+- `results/lr_pairs_kept.csv`: ligand-receptor pairs retained after matching genes to the expression table.
+- `results/lr_feature_report.json`: ligand-receptor matching summary.
+- `results/features/x_receptors.csv`: receiver receptor expression matrix.
+- `results/features/x_ligand_exposure.csv`: ligand exposure matrix.
+- `results/features/x_coverage.csv`: island coverage feature matrix.
+- `results/features/target_genes.csv`: target genes modeled by XGBoost.
+- `results/r2_summary.csv`: per-receiver, per-gene XGBoost performance.
+- `results/split_info.json`: spatial split and feature metadata.
+- `results/downstream/r2_ecdf.png`: ECDF plot of per-gene `R2` values.
+- `results/downstream/p_values.csv`: permutation-based p-values, when enabled.
+- `results/downstream/responsive_genes/`: per-receiver responsive-gene tables.
+- `results/downstream/shap/`: SHAP feature rankings, when enabled.
+- `results/downstream/perturbations/`: ligand blockade and receptor knockout signatures.
+- `results/models/`: trained XGBoost model files, when model saving is enabled.
 
 ## Key Implementation Files
 
