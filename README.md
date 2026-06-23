@@ -58,8 +58,10 @@ The main workflow is:
 ├── pipeline-notebooks/
 │   └── atlas-pipeline.ipynb
 └── scripts/
+    ├── compare_squidpy_colocem.py
     ├── ncem_results.py
-    └── pipeline.py
+    ├── pipeline.py
+    └── run_squidpy_enrichment.py
 ```
 
 ## Environment Setup
@@ -79,10 +81,11 @@ The main dependencies are:
 - `xgboost` for per-gene expression models,
 - `shap` for feature-importance analysis,
 - `matplotlib` for summary plots,
+- `scanpy`, `anndata`, and `squidpy` for neighborhood-enrichment comparison,
 - `joblib` for model bundle export,
 - `tqdm` for progress bars.
 
-### For MacOS Users 
+### For MacOS
 
 - XGBoost requires the OpenMP runtime to be separately installed using `brew install libomp`.
 
@@ -176,6 +179,46 @@ python scripts/pipeline.py data/atlas_allexp.csv \
   --skip-shap
 ```
 
+### Running the Squidpy Neighborhood-Enrichment Baseline
+
+The repository also includes a Squidpy-based baseline for reviewer-facing comparison of cell-type co-presence patterns. This analysis is not intended to replace or benchmark the full ColocEM model. It asks whether ColocEM's cell-type colocalization patterns are consistent with an established spatial neighborhood-enrichment method.
+
+First, compute Squidpy neighborhood-enrichment z-scores:
+
+```bash
+python scripts/run_squidpy_enrichment.py \
+  --input data/atlas_allexp.csv \
+  --cell-type-key class \
+  --output-dir results/squidpy_enrichment \
+  --n-perms 1000 \
+  --n-neighs 6 \
+  --n-jobs 1
+```
+
+For `data/atlas_allexp.csv`, prefer `--n-neighs` unless you have chosen a radius in the same coordinate scale as the `x` and `y` columns. The atlas coordinates span only about 10 units by 7 units, so a radius such as `500` would create an almost complete graph and can exhaust memory.
+
+The Squidpy script also supports `.h5ad` inputs:
+
+```bash
+python scripts/run_squidpy_enrichment.py \
+  --input path/to/data.h5ad \
+  --cell-type-key cell_type \
+  --spatial-key spatial \
+  --output-dir results/squidpy_enrichment
+```
+
+After running ColocEM and generating `results/island_index.csv`, compare Squidpy z-scores against ColocEM pair scores:
+
+```bash
+python scripts/compare_squidpy_colocem.py \
+  --squidpy-long results/squidpy_enrichment/squidpy_nhood_enrichment_zscores_long.csv \
+  --colocem-islands results/island_index.csv \
+  --output-dir results/squidpy_colocem_comparison \
+  --top-k 10,20,50
+```
+
+By default, the comparison treats cell-type pairs as unordered, drops self-pairs, averages reciprocal Squidpy scores, and uses `sum(cluster_mass_z)` from ColocEM islands as the ColocEM pair score.
+
 ## Pipeline Outputs
 
 The script writes intermediate and downstream outputs under the selected results directory. The paths below assume the default `results/` directory; if you pass `--results-dir`, replace `results/` with your chosen output directory.
@@ -201,6 +244,15 @@ Important files include:
 - `results/downstream/perturbations/`: ligand blockade and receptor knockout signatures.
 - `results/models/`: trained XGBoost model files, when model saving is enabled.
 
+Squidpy baseline outputs include:
+
+- `results/squidpy_enrichment/squidpy_nhood_enrichment_zscore_matrix.csv`: square Squidpy z-score matrix.
+- `results/squidpy_enrichment/squidpy_nhood_enrichment_zscores_long.csv`: long-format Squidpy cell-type pair z-scores.
+- `results/squidpy_colocem_comparison/merged_squidpy_colocem_pairs.csv`: merged Squidpy and ColocEM pair scores.
+- `results/squidpy_colocem_comparison/summary_metrics.csv`: Spearman and Pearson correlations.
+- `results/squidpy_colocem_comparison/topk_overlap.csv`: top-k overlap and Jaccard similarity.
+- `results/squidpy_colocem_comparison/squidpy_vs_colocem_scatter.png`: scatter plot of Squidpy z-scores versus ColocEM pair scores.
+
 ## Key Implementation Files
 
 ### `scripts/pipeline.py`
@@ -220,6 +272,31 @@ This is the main command-line implementation of ColocEM. It runs the active pipe
 - export of results and trained models.
 
 The script intentionally does **not** use the ElasticNet experiment from the notebook and does **not** use explicit ligand-receptor product features in the final XGBoost design matrix. The XGBoost model uses receptor expression, ligand exposure, and coverage features directly.
+
+### `scripts/run_squidpy_enrichment.py`
+
+This script computes Squidpy neighborhood-enrichment z-scores as an external spatial co-presence baseline. It accepts either:
+
+- a CSV file with coordinate columns and a cell-type column, including `data/atlas_allexp.csv`, or
+- an AnnData `.h5ad` file with spatial coordinates in `adata.obsm`.
+
+For CSV input, the script reads only the coordinate and cell-type columns, then constructs a lightweight AnnData object for Squidpy. This avoids loading the full gene-expression matrix when the comparison only needs spatial coordinates and cell-type labels.
+
+The output is both a square z-score matrix and a long-format table of cell-type pair z-scores.
+
+### `scripts/compare_squidpy_colocem.py`
+
+This script merges Squidpy z-scores with ColocEM pair-level island scores. It canonicalizes unordered cell-type pairs so that Squidpy's square matrix output can be compared with ColocEM's cell-type combinations.
+
+The comparison reports:
+
+- Spearman correlation,
+- Pearson correlation,
+- top-k overlap,
+- Jaccard similarity,
+- a scatter plot.
+
+The default ColocEM score is `sum(cluster_mass_z)` per cell-type pair from `results/island_index.csv`, capturing both island strength and spatial extent.
 
 ### `pipeline-notebooks/atlas-pipeline.ipynb`
 

@@ -7,3 +7,4 @@ per_gene_results
 results
 Manuscript.pdf
 .DS_Store
+pipeline-notebooks/atlas-spatial-plot.ipynb
