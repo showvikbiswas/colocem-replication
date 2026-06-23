@@ -45,14 +45,12 @@ The main workflow is:
 
 ```text
 .
-├── Manuscript.pdf
 ├── README.md
 ├── requirements.txt
 ├── analysis/
 │   ├── colocalization_breakdown.ipynb
 │   └── r2-comparison.py
 ├── data/
-│   ├── atlas_allexp.csv
 │   ├── mouse_850_lr_pairs_cpdb_interactions.csv
 │   └── r2_summary.csv
 ├── pipeline-notebooks/
@@ -63,6 +61,8 @@ The main workflow is:
     ├── pipeline.py
     └── run_squidpy_enrichment.py
 ```
+
+The full atlas expression table `data/atlas_allexp.csv` is not tracked in the repository. Download it separately as described below before running the atlas-scale pipeline.
 
 ## Environment Setup
 
@@ -85,7 +85,7 @@ The main dependencies are:
 - `joblib` for model bundle export,
 - `tqdm` for progress bars.
 
-### For MacOS
+### For macOS
 
 - XGBoost requires the OpenMP runtime to be separately installed using `brew install libomp`.
 
@@ -127,6 +127,8 @@ Use `--ligand-col` and `--receptor-col` if your ligand-receptor table uses diffe
 ### Downloading the Dataset
 
 Download the Mouse Brain Atlas dataset file `atlas_allexp.csv` from [here](https://zenodo.org/records/18134067). The file has been preprocessed according to the script's requirements. Place the file at `data/atlas_allexp.csv`.
+
+Download the ARTISTA dataset from [here](https://db.cngb.org/stomics/artista/).
 
 ### Running the Pipeline
 
@@ -219,6 +221,14 @@ python scripts/compare_squidpy_colocem.py \
 
 By default, the comparison treats cell-type pairs as unordered, drops self-pairs, averages reciprocal Squidpy scores, and uses `sum(cluster_mass_z)` from ColocEM islands as the ColocEM pair score.
 
+For each detected island, `cluster_mass_z` is the summed excess Fisher z-transformed colocalization signal above the island threshold:
+
+```text
+cluster_mass_z = sum(z_window - z_threshold)
+```
+
+where the sum is taken over all windows in the island. This score increases when an island has stronger local colocalization, covers more windows, or both.
+
 ## Pipeline Outputs
 
 The script writes intermediate and downstream outputs under the selected results directory. The paths below assume the default `results/` directory; if you pass `--results-dir`, replace `results/` with your chosen output directory.
@@ -251,7 +261,7 @@ Squidpy baseline outputs include:
 - `results/squidpy_colocem_comparison/merged_squidpy_colocem_pairs.csv`: merged Squidpy and ColocEM pair scores.
 - `results/squidpy_colocem_comparison/summary_metrics.csv`: Spearman and Pearson correlations.
 - `results/squidpy_colocem_comparison/topk_overlap.csv`: top-k overlap and Jaccard similarity.
-- `results/squidpy_colocem_comparison/squidpy_vs_colocem_scatter.png`: scatter plot of Squidpy z-scores versus ColocEM pair scores.
+- `results/squidpy_colocem_comparison/squidpy_vs_colocem_scatter.pdf`: scatter plot of Squidpy z-scores versus ColocEM pair scores.
 
 ## Key Implementation Files
 

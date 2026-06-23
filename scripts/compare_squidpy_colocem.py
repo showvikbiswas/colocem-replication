@@ -268,12 +268,11 @@ def save_scatter(merged: pd.DataFrame, summary: pd.DataFrame, output_path: Path)
     fig, ax = plt.subplots(figsize=(7, 5))
     ax.scatter(valid["squidpy_zscore"], valid["colocem_score"], s=28, alpha=0.75)
     ax.set_xlabel("Squidpy neighborhood-enrichment z-score")
-    ax.set_ylabel("ColocEM pair score")
+    ax.set_ylabel("ColocEM aggregate island score")
     if not summary.empty:
         row = summary.iloc[0]
         title = (
-            "Squidpy vs ColocEM pair scores\n"
-            f"Spearman rho={row['spearman_r']:.3g}, p={row['spearman_p_value']:.3g}, "
+            f"Spearman ρ={row['spearman_r']:.3g}, "
             f"n={int(row['n_finite_pairs'])}"
         )
     else:
@@ -310,7 +309,7 @@ def run(args: argparse.Namespace) -> None:
     merged_path = args.output_dir / "merged_squidpy_colocem_pairs.csv"
     summary_path = args.output_dir / "summary_metrics.csv"
     topk_path = args.output_dir / "topk_overlap.csv"
-    plot_path = args.output_dir / "squidpy_vs_colocem_scatter.png"
+    plot_path = args.output_dir / "squidpy_vs_colocem_scatter.pdf"
 
     merged.to_csv(merged_path, index=False)
     summary.to_csv(summary_path, index=False)
